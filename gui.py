@@ -187,18 +187,15 @@ elif choice == "Performance":
     test_f1 = f1_score(Ytest, predicted_test_labels, average="macro")
     cols = st.columns(3)
     with cols[0]:
-        st.write("Test set contains")
+        st.write("Testing set initially contains")
         st.write(Counter(Ytest))
     with cols[1]:
         st.write("Confusion matrix", test_confusion_mat)
     with cols[2]:
-        st.write("macro-average recall score {:.4f}".format(test_recall))
-        st.write("macro-average f1 score {:.4f}".format(test_f1))
+        st.write("macro-average recall score: \n\n{:.4f}".format(test_recall))
+        st.write("macro-average f1 score: \n\n{:.4f}".format(test_f1))
 
 elif choice == "Inference":
-    launch_api = st.button("launch (flask) API server.", key="23")
-    if launch_api:        
-        subprocess.Popen(['python', 'api.py'])
 
         
     digit2class = {1: "Good invest.", 0: "Not Good invest."}
@@ -206,11 +203,8 @@ elif choice == "Inference":
 
     try:
         predictors_names = joblib.load(st.session_state['output_dir']+'/'+'features.save') 
-
-        api_server = st.text_input("API server url", api_server)
-        st.write('Please set values for the below sports parameters in order to:')
-        
-        predict_btn = st.button("Infer whether the NBA ⛹️‍♂️, ⛹️‍♀️ in question is a good invest, or not.")
+        st.write('Here you can use the pre-trained model to infer labels for new players. Please set values for the below sports parameters in order to:')
+        predict_btn = st.button("Infer whether the ⛹️‍♂️ in question is a good invest, or not.")
         sliders = [st.empty() for p in predictors_names]
         vals = []
         result_holder = st.empty()
@@ -251,18 +245,24 @@ elif choice == "Inference":
                     vals.append(b)
                     
         if predict_btn:
-            input_dict = {k:v for k,v in zip(predictors_names, [x for x in vals])}
             try:
-                r = requests.get(api_server, params=input_dict)
-                try:
-                    cls = int(eval(r.text)['prediction'][0])
-                    if cls == 1:
-                        result_holder.success("Given the stats. below, this player is likely {}".format(digit2class[cls].lower()))
-                    else:
-                        result_holder.error("Given the stats. below, this player is likely {}".format(digit2class[cls].lower()))  
-                except:
-                    result_holder.warning("{}".format(list(eval(r.text)['error'])[0]))
+                
+                normalizer = joblib.load(st.session_state['output_dir'] + '/' + 'normalizer.save') 
+                transformer = joblib.load(st.session_state['output_dir'] + '/' + 'transformer.save') 
+                model = joblib.load(st.session_state['output_dir'] + '/' + 'model.save') 
+                input_dict = {k:v for k,v in zip(predictors_names, [x for x in vals])}
+                x = np.array(list(input_dict.values()))
+                x = x.reshape(1, -1)
+                x = normalizer.transform(x)
+                x = transformer.transform(x)
+                prediction = model.predict(x)
+                st.balloons()
+                
+                if prediction[0] == 0:
+                    result_holder.error("Based on his stats, this is a {} player to invest in".format({0:"bad",1:"good"}[prediction[0]]))
+                else:
+                    result_holder.success("Based on his stats, this is a {} player to invest in".format({0:"bad",1:"good"}[prediction[0]]))
             except:
-                result_holder.info("API server at {} is down.".format(api_server)) 
+                result_holder.warning("Model files not found.")
     except:
         st.write("Can't load list of parameters. Please verify the given folder and filename params.")
