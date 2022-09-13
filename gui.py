@@ -131,7 +131,7 @@ elif choice == "Model training":
     st.write("The best chosen model and best learning settings were:")
     st.write("* SVM. With Polynomial kernel, which means that players data was not linearly separable and it contains non-linearities. The degree of the polynomial kernel used in the SVM was 4. The (inverse) regularization parameter C of the model was 1.0")
     st.write("* Before hitting the SVM, our data points were normalized using the MinMax scaler (was compared to StandardScaling). The dimensionality of normalized data points was then reduced using a Recursive Feature Selection process. We kept only 11 features in the final best model.")
-    st.markdown("Please head to [this notebook](notebooklink) for details about the selection process of the best model.")
+    st.markdown("Please head to [this notebook](https://github.com/ylaxor/nba-talents-classification/blob/main/dev.ipynb) for details about the selection process of the best model.")
     
     with st.expander("Classifier model parameters"):
         c_param = st.slider("C", 1e-1, 2.0)
